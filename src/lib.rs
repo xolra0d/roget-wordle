@@ -112,70 +112,7 @@ pub struct Guess<'a> {
 
 impl Guess<'_> {
     pub fn matches(&self, word: &str) -> bool {
-        assert_eq!(word.len(), 5);
-        assert_eq!(self.word.len(), 5);
-        
-        let mut used = [false; 5];
-        for (i, ((g, &m), w)) in self
-            .word
-            .bytes() 
-            .zip(&self.mask)
-            .zip(word.bytes())
-            .enumerate()
-        {
-            if m == Correctness::Correct {
-                if g != w {
-                    return false;
-                } else {
-                    used[i] = true;
-                    continue;
-                }
-            }
-        }
-
-        for (i, (w, &m)) in word.bytes().zip(&self.mask).enumerate() {
-            if m == Correctness::Correct {
-                // must be correct, or we'd have returned in the previous loop
-                continue;
-            }
-            let mut plausible = true;
-            if self
-                .word
-                .bytes()
-                .zip(&self.mask)
-                .enumerate()
-                .any(|(j, (g, m))| {
-                    if g != w || used[j] {
-                        return false;
-                    }
-                    match m {
-                        Correctness::Correct => unreachable!(
-                            "all correct guesses should have resulted in return or be used"
-                        ),
-                        Correctness::Misplaced if j == i => {
-                            plausible = false;
-                            return false;
-                        }
-                        Correctness::Misplaced => {
-                            used[j] = true;
-                            return true;
-                        }
-                        Correctness::Wrong => {
-                            plausible = false;
-                            return false;
-                        }
-                    }
-                })
-                && plausible
-            {
-                // The char `w` was yellow in the previous match
-            } else if !plausible {
-                return false;
-            } else {
-                // We have no information about char `w`, so word might still match.
-            }
-        }
-        true
+        Correctness::compute(word, &self.word) == self.mask
     }
 }
 
@@ -215,8 +152,9 @@ macro_rules! mask {
 #[cfg(test)]
 mod tests {
     mod guess_matcher {
-        use crate::{Guess, Cow};
-        
+        use crate::{Guess, tests};
+        use std::borrow::Cow;
+
         macro_rules! check {
             ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
                 assert!(Guess {
@@ -243,6 +181,11 @@ mod tests {
             check!("aaabb" + [C M W W W] disallows "accaa");
             check!("baaaa" + [W C M W W] disallows "caacc");
             check!("baaaa" + [W C M W W] allows "aaccc");
+        }
+
+        #[test]
+        fn from_crash() {
+            check!("tares" + [W M M W W] disallows "brink");
         }
     }
 
