@@ -1,5 +1,5 @@
 use crate::{Correctness, DICTIONARY, Guess, Guesser, Word};
-use std::{borrow::Cow, collections::HashMap, ops::Neg};
+use std::{collections::HashMap, ops::Neg};
 
 pub struct Allocs {
     remaining: HashMap<&'static Word, usize>,
@@ -26,7 +26,7 @@ impl Allocs {
 
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
-    word: &'static Word,
+    word: Word,
     goodness: f64,
 }
 
@@ -42,13 +42,13 @@ impl Guesser for Allocs {
         let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
 
         let mut best: Option<Candidate> = None;
-        for (&word, _) in &self.remaining {
+        for (&&word, _) in &self.remaining {
             let mut sum = 0.0;
             for pattern in Correctness::patterns() {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: Cow::Borrowed(word),
+                        word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -72,6 +72,6 @@ impl Guesser for Allocs {
                 best = Some(Candidate { word, goodness })
             }
         }
-        *best.unwrap().word
+        best.unwrap().word
     }
 }

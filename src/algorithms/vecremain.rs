@@ -1,8 +1,8 @@
 use crate::{Correctness, DICTIONARY, Guess, Guesser, Word};
-use std::{borrow::Cow, ops::Neg};
+use std::ops::Neg;
 
 pub struct VecRem {
-    remaining: Vec<(&'static Word, usize)>,
+    remaining: Vec<(Word, usize)>,
 }
 
 impl VecRem {
@@ -18,7 +18,7 @@ impl VecRem {
                     .try_into()
                     .expect("every word should be 5 characters");
 
-                (word, count)
+                (*word, count)
             })),
         }
     }
@@ -26,7 +26,7 @@ impl VecRem {
 
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
-    word: &'static Word,
+    word: Word,
     goodness: f64,
 }
 
@@ -48,7 +48,7 @@ impl Guesser for VecRem {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: Cow::Borrowed(word),
+                        word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -72,6 +72,6 @@ impl Guesser for VecRem {
                 best = Some(Candidate { word, goodness })
             }
         }
-        *best.unwrap().word
+        best.unwrap().word
     }
 }

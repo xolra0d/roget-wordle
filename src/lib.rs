@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashSet};
+use std::collections::HashSet;
 
 pub mod algorithms;
 
@@ -40,9 +40,9 @@ impl Wordle {
                 std::str::from_utf8(&guess).unwrap()
             );
 
-            let correctness = Correctness::compute(answer, &guess);
+            let correctness = Correctness::compute(*answer, guess);
             history.push(Guess {
-                word: Cow::Owned(guess),
+                word: guess,
                 mask: correctness,
             });
         }
@@ -61,7 +61,7 @@ pub enum Correctness {
 }
 
 impl Correctness {
-    fn compute(answer: &Word, guess: &Word) -> [Self; 5] {
+    fn compute(answer: Word, guess: Word) -> [Self; 5] {
         assert_eq!(answer.len(), 5);
         assert_eq!(guess.len(), 5);
         let mut c = [Correctness::Wrong; 5];
@@ -111,14 +111,14 @@ impl Correctness {
     }
 }
 
-pub struct Guess<'a> {
-    pub word: Cow<'a, Word>,
+pub struct Guess {
+    pub word: Word,
     pub mask: [Correctness; 5],
 }
 
-impl Guess<'_> {
+impl Guess {
     pub fn matches(&self, word: &Word) -> bool {
-        Correctness::compute(word, &self.word) == self.mask
+        Correctness::compute(*word, self.word) == self.mask
     }
 }
 
@@ -159,19 +159,18 @@ macro_rules! mask {
 mod tests {
     mod guess_matcher {
         use crate::Guess;
-        use std::borrow::Cow;
 
         macro_rules! check {
             ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
                 assert!(Guess {
-                    word: Cow::Borrowed($prev),
+                    word: $prev,
                     mask: mask![$($mask)+]
                 }
                 .matches($next));
             };
             ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
                 assert!(!Guess {
-                    word: Cow::Borrowed($prev),
+                    word: $prev,
                     mask: mask![$($mask)+]
                 }
                 .matches($next));

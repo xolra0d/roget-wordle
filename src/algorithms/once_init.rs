@@ -2,10 +2,10 @@ use crate::{Correctness, DICTIONARY, Guess, Guesser, Word};
 use once_cell::sync::OnceCell;
 use std::{borrow::Cow, ops::Neg};
 
-static INITITIAL: OnceCell<Vec<(&'static Word, usize)>> = OnceCell::new();
+static INITITIAL: OnceCell<Vec<(Word, usize)>> = OnceCell::new();
 
 pub struct OnceInit {
-    remaining: Cow<'static, Vec<(&'static Word, usize)>>,
+    remaining: Cow<'static, Vec<(Word, usize)>>,
 }
 
 impl OnceInit {
@@ -22,7 +22,7 @@ impl OnceInit {
                         .try_into()
                         .expect("every word should be 5 characters");
 
-                    (word, count)
+                    (*word, count)
                 }))
             })),
         }
@@ -31,7 +31,7 @@ impl OnceInit {
 
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
-    word: &'static Word,
+    word: Word,
     goodness: f64,
 }
 
@@ -42,9 +42,17 @@ impl Guesser for OnceInit {
         }
         if let Some(last) = history.last() {
             if matches!(self.remaining, Cow::Owned(_)) {
-                self.remaining.to_mut().retain(|(word, _)| last.matches(word));
+                self.remaining
+                    .to_mut()
+                    .retain(|(word, _)| last.matches(word));
             } else {
-                self.remaining = Cow::Owned(self.remaining.iter().filter(|(word, _)| last.matches(word)).copied().collect());
+                self.remaining = Cow::Owned(
+                    self.remaining
+                        .iter()
+                        .filter(|(word, _)| last.matches(word))
+                        .copied()
+                        .collect(),
+                );
             }
         }
 
@@ -57,7 +65,7 @@ impl Guesser for OnceInit {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &*self.remaining {
                     let g = Guess {
-                        word: Cow::Borrowed(word),
+                        word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -81,6 +89,6 @@ impl Guesser for OnceInit {
                 best = Some(Candidate { word, goodness })
             }
         }
-        *best.unwrap().word
+        best.unwrap().word
     }
 }
