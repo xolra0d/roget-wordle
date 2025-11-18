@@ -1,8 +1,8 @@
-use crate::{Correctness, DICTIONARY, Guess, Guesser};
+use crate::{Correctness, DICTIONARY, Guess, Guesser, Word};
 use std::{borrow::Cow, collections::HashMap, ops::Neg};
 
 pub struct Naive {
-    remaining: HashMap<&'static str, usize>,
+    remaining: HashMap<&'static Word, usize>,
 }
 
 impl Naive {
@@ -13,6 +13,10 @@ impl Naive {
                     .split_once(' ')
                     .expect("Every line is word + space + frequency ");
                 let count: usize = count.parse().expect("Every count is a number");
+                let word: &[u8; 5] = word
+                    .as_bytes()
+                    .try_into()
+                    .expect("every word should be 5 characters");
                 (word, count)
             })),
         }
@@ -21,14 +25,14 @@ impl Naive {
 
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
-    word: &'static str,
+    word: &'static Word,
     goodness: f64,
 }
 
 impl Guesser for Naive {
-    fn guess(&mut self, history: &[Guess]) -> String {
+    fn guess(&mut self, history: &[Guess]) -> Word {
         if history.is_empty() {
-            return "tares".to_string();
+            return *b"tares";
         }
         if let Some(last) = history.last() {
             self.remaining.retain(|word, _| last.matches(word));
@@ -43,7 +47,7 @@ impl Guesser for Naive {
                 let mut in_pattern_total = 0;
                 for (candidate, count) in &self.remaining {
                     let g = Guess {
-                        word: Cow::Owned(word.to_string()),
+                        word: Cow::Owned(*word),
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -67,6 +71,6 @@ impl Guesser for Naive {
                 best = Some(Candidate { word, goodness })
             }
         }
-        best.unwrap().word.to_string()
+        *best.unwrap().word
     }
 }

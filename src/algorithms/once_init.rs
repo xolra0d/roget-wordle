@@ -1,24 +1,29 @@
 use crate::{Correctness, DICTIONARY, Guess, Guesser, Word};
+use once_cell::sync::OnceCell;
 use std::{borrow::Cow, ops::Neg};
 
-pub struct VecRem {
-    remaining: Vec<(&'static Word, usize)>,
+static INITITIAL: OnceCell<Vec<(&'static Word, usize)>> = OnceCell::new();
+
+pub struct OnceInit {
+    remaining: Cow<'static, Vec<(&'static Word, usize)>>,
 }
 
-impl VecRem {
+impl OnceInit {
     pub fn new() -> Self {
         Self {
-            remaining: Vec::from_iter(DICTIONARY.lines().map(|line| {
-                let (word, count) = line
-                    .split_once(' ')
-                    .expect("Every line is word + space + frequency ");
-                let count: usize = count.parse().expect("Every count is a number");
-                let word: &[u8; 5] = word
-                    .as_bytes()
-                    .try_into()
-                    .expect("every word should be 5 characters");
+            remaining: Cow::Borrowed(INITITIAL.get_or_init(|| {
+                Vec::from_iter(DICTIONARY.lines().map(|line| {
+                    let (word, count) = line
+                        .split_once(' ')
+                        .expect("Every line is word + space + frequency ");
+                    let count: usize = count.parse().expect("Every count is a number");
+                    let word: &[u8; 5] = word
+                        .as_bytes()
+                        .try_into()
+                        .expect("every word should be 5 characters");
 
-                (word, count)
+                    (word, count)
+                }))
             })),
         }
     }
@@ -30,23 +35,27 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for VecRem {
+impl Guesser for OnceInit {
     fn guess(&mut self, history: &[Guess]) -> Word {
         if history.is_empty() {
             return *b"tares";
         }
         if let Some(last) = history.last() {
-            self.remaining.retain(|(word, _)| last.matches(word));
+            if matches!(self.remaining, Cow::Owned(_)) {
+                self.remaining.to_mut().retain(|(word, _)| last.matches(word));
+            } else {
+                self.remaining = Cow::Owned(self.remaining.iter().filter(|(word, _)| last.matches(word)).copied().collect());
+            }
         }
 
         let remaining_count: usize = self.remaining.iter().map(|&(_, c)| c).sum();
 
         let mut best: Option<Candidate> = None;
-        for &(word, _) in &self.remaining {
+        for &(word, _) in &*self.remaining {
             let mut sum = 0.0;
             for pattern in Correctness::patterns() {
                 let mut in_pattern_total = 0;
-                for (candidate, count) in &self.remaining {
+                for (candidate, count) in &*self.remaining {
                     let g = Guess {
                         word: Cow::Borrowed(word),
                         mask: pattern,
