@@ -21,6 +21,7 @@ enum Implementation {
     VecRem,
     OnceInit,
     PreCalc,
+    Weight,
 }
 
 fn main() {
@@ -31,23 +32,28 @@ fn main() {
         Implementation::VecRem => play(roget::algorithms::VecRem::new, args.max),
         Implementation::OnceInit => play(roget::algorithms::OnceInit::new, args.max),
         Implementation::PreCalc => play(roget::algorithms::PreCalc::new, args.max),
+        Implementation::Weight => play(roget::algorithms::Weigtht::new, args.max),
     };
 }
 
 fn play<G: Guesser>(mut mk: impl FnMut() -> G, max: Option<usize>) {
     let w: roget::Wordle = roget::Wordle::new();
+    let mut score = 0;
+    let mut games = 0;
     for answer in GAMES.split_whitespace().take(max.unwrap_or(usize::MAX)) {
         let guesser = (mk)();
-        if let Some(score) = w.play(
+        if let Some(s) = w.play(
             answer
                 .as_bytes()
                 .try_into()
                 .expect("every word should be 5 characters"),
             guesser,
         ) {
-            println!("Guessed {answer} in {score}");
+            games += 1;
+            score += s;
         } else {
             eprintln!("Failed to guess: {answer}");
         }
     }
+    println!("Average score: {:.2}", score as f64 / games as f64);
 }
