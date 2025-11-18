@@ -5,6 +5,7 @@ mod precalc;
 mod prune;
 mod vecremain;
 mod weight;
+mod cutoff;
 
 pub use allocs::Allocs;
 pub use naive::Naive;
@@ -13,3 +14,4 @@ pub use precalc::PreCalc;
 pub use prune::Prune;
 pub use vecremain::VecRem;
 pub use weight::Weigtht;
+pub use cutoff::CutOff;
