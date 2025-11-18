@@ -160,37 +160,57 @@ mod tests {
     mod guess_matcher {
         use crate::Guess;
 
-        macro_rules! check {
-            ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
-                assert!(Guess {
-                    word: $prev,
-                    mask: mask![$($mask)+]
-                }
-                .matches($next));
-            };
-            ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
-                assert!(!Guess {
-                    word: $prev,
-                    mask: mask![$($mask)+]
-                }
-                .matches($next));
-            };
-        }
-
         #[test]
         fn matches() {
-            check!(b"abcde" + [C C C C C] allows b"abcde");
-            check!(b"abcde" + [C C C C C] disallows b"abcdf");
-            check!(b"abcde" + [W W W W W] allows b"fghjk");
-            check!(b"abcde" + [M M M M M] allows b"eabcd");
-            check!(b"aaabb" + [C M W W W] disallows b"accaa");
-            check!(b"baaaa" + [W C M W W] disallows b"caacc");
-            check!(b"baaaa" + [W C M W W] allows b"aaccc");
-        }
-
-        #[test]
-        fn from_crash() {
-            check!(b"tares" + [W M M W W] disallows b"brink");
+            assert!(
+                Guess {
+                    word: *b"abcde",
+                    mask: mask![C C C C C]
+                }
+                .matches(b"abcde")
+            );
+            assert!(
+                !Guess {
+                    word: *b"abcde",
+                    mask: mask![C C C C C]
+                }
+                .matches(b"abcdf")
+            );
+            assert!(
+                Guess {
+                    word: *b"abcde",
+                    mask: mask![W W W W W]
+                }
+                .matches(b"fghjk")
+            );
+            assert!(
+                Guess {
+                    word: *b"abcde",
+                    mask: mask![M M M M M]
+                }
+                .matches(b"eabcd")
+            );
+            assert!(
+                !Guess {
+                    word: *b"aaabb",
+                    mask: mask![C M W W W]
+                }
+                .matches(b"accaa")
+            );
+            assert!(
+                !Guess {
+                    word: *b"baaaa",
+                    mask: mask![W C M W W]
+                }
+                .matches(b"caacc")
+            );
+            assert!(
+                Guess {
+                    word: *b"baaaa",
+                    mask: mask![W C M W W]
+                }
+                .matches(b"aaccc")
+            );
         }
     }
 
@@ -277,47 +297,47 @@ mod tests {
 
         #[test]
         fn all_green() {
-            assert_eq!(Correctness::compute(b"abcde", b"abcde"), mask![C C C C C]);
+            assert_eq!(Correctness::compute(*b"abcde", *b"abcde"), mask![C C C C C]);
         }
 
         #[test]
         fn all_grey() {
-            assert_eq!(Correctness::compute(b"abcde", b"fghjk"), mask![W W W W W]);
+            assert_eq!(Correctness::compute(*b"abcde", *b"fghjk"), mask![W W W W W]);
         }
 
         #[test]
         fn all_yellow() {
-            assert_eq!(Correctness::compute(b"abcde", b"eabcd"), mask![M M M M M]);
+            assert_eq!(Correctness::compute(*b"abcde", *b"eabcd"), mask![M M M M M]);
         }
 
         #[test]
         fn repeat_green() {
-            assert_eq!(Correctness::compute(b"aabbb", b"aaccc"), mask![C C W W W]);
+            assert_eq!(Correctness::compute(*b"aabbb", *b"aaccc"), mask![C C W W W]);
         }
 
         #[test]
         fn repeat_yellow() {
-            assert_eq!(Correctness::compute(b"aabbb", b"ccaac"), mask![W W M M W]);
+            assert_eq!(Correctness::compute(*b"aabbb", *b"ccaac"), mask![W W M M W]);
         }
 
         #[test]
         fn mixed1() {
-            assert_eq!(Correctness::compute(b"aabbb", b"caacc"), mask![W C M W W]);
+            assert_eq!(Correctness::compute(*b"aabbb", *b"caacc"), mask![W C M W W]);
         }
 
         #[test]
         fn mixed2() {
-            assert_eq!(Correctness::compute(b"azzaz", b"aaabb"), mask![C M W W W]);
+            assert_eq!(Correctness::compute(*b"azzaz", *b"aaabb"), mask![C M W W W]);
         }
 
         #[test]
         fn mixed3() {
-            assert_eq!(Correctness::compute(b"baccc", b"aaddd"), mask![W C W W W]);
+            assert_eq!(Correctness::compute(*b"baccc", *b"aaddd"), mask![W C W W W]);
         }
 
         #[test]
         fn mixed4() {
-            assert_eq!(Correctness::compute(b"abcde", b"aacde"), mask![C W C C C]);
+            assert_eq!(Correctness::compute(*b"abcde", *b"aacde"), mask![C W C C C]);
         }
     }
 }

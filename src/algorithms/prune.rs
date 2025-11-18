@@ -91,7 +91,13 @@ impl Guesser for Prune {
             if matches!(self.patterns, Cow::Owned(_)) {
                 self.patterns.to_mut().retain(check_pattern);
             } else {
-                self.patterns = Cow::Owned(self.patterns.iter().copied().filter(check_pattern).collect())
+                self.patterns = Cow::Owned(
+                    self.patterns
+                        .iter()
+                        .copied()
+                        .filter(check_pattern)
+                        .collect(),
+                )
             }
 
             let p_word = count as f64 / remaining_count as f64;

@@ -23,7 +23,7 @@ impl CutOff {
                         .as_bytes()
                         .try_into()
                         .expect("every word should be 5 characters");
-                    
+
                     (*word, count)
                 }));
                 words.sort_unstable_by_key(|&(_, count)| std::cmp::Reverse(count));
@@ -95,7 +95,13 @@ impl Guesser for CutOff {
             if matches!(self.patterns, Cow::Owned(_)) {
                 self.patterns.to_mut().retain(check_pattern);
             } else {
-                self.patterns = Cow::Owned(self.patterns.iter().copied().filter(check_pattern).collect())
+                self.patterns = Cow::Owned(
+                    self.patterns
+                        .iter()
+                        .copied()
+                        .filter(check_pattern)
+                        .collect(),
+                )
             }
 
             let p_word = count as f64 / remaining_count as f64;
